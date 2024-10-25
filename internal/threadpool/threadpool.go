@@ -1,4 +1,4 @@
-package runner
+package threadpool
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Easy-Infra-Ltd/easy-test/internal/assert"
+	"github.com/google/uuid"
 )
 
 const (
@@ -21,7 +22,7 @@ type Task interface {
 }
 
 type Worker struct {
-	id         int
+	id         uuid
 	taskQueue  chan Task
 	workerPool chan *Worker
 	threadPool *ThreadPool
@@ -31,9 +32,13 @@ type Worker struct {
 	logger     *slog.Logger
 }
 
-func NewWorker(id int, wp chan *Worker, tp *ThreadPool, idleTime time.Duration) *Worker {
+func NewWorker(wp chan *Worker, tp *ThreadPool, idleTime time.Duration) *Worker {
+	assert.NotNil(tp, "ThreadPool should not be nil when creating a worker")
+	assert.Assert(idleTime > time.Second, "Idle time should be greater than a second")
+
+	id := uuid.New()
 	ctx, cancel := context.WithCancel(tp.ctx)
-	logger := slog.Default().With("area", fmt.Sprintf("Worker %d", id))
+	logger := slog.Default().With("area", fmt.Sprintf("Worker %w", id.String()))
 	return &Worker{
 		id:         id,
 		taskQueue:  make(chan Task),
@@ -47,9 +52,12 @@ func NewWorker(id int, wp chan *Worker, tp *ThreadPool, idleTime time.Duration) 
 }
 
 func (w *Worker) Start(wg *sync.WaitGroup) {
-	ctxDoneStr := fmt.Sprintf("Stopping worker %d as context has resolved", w.id)
+	assert.NotNil(wg, "WaitGroup should not be nil when starting a worker")
+
+	ctxDoneStr := fmt.Sprintf("Stopping worker %w as context has resolved", w.id.String())
 	go func() {
 		defer func() {
+			w.logger.Info(fmt.Sprintf("Remove worker %w", w.id.String()))
 			w.threadPool.RemoveWorker()
 		}()
 
@@ -61,7 +69,7 @@ func (w *Worker) Start(wg *sync.WaitGroup) {
 					task.Run()
 					wg.Done()
 				case <-time.After(w.idleTime):
-					w.logger.Info(fmt.Sprintf("Stopping worker %d as idle for %d", w.id, w.idleTime))
+					w.logger.Info(fmt.Sprintf("Stopping worker %w as idle for %d", w.id.String(), w.idleTime))
 					return
 				case <-w.ctx.Done():
 					w.logger.Info(ctxDoneStr)
@@ -122,17 +130,17 @@ func (tp *ThreadPool) dispatch() {
 		case task := <-tp.taskQueue:
 			select {
 			case worker := <-tp.workerPool:
+				tp.logger.Info(fmt.Sprintf("Adding task to %w", worker.id.String()))
 				worker.taskQueue <- task
-
 			default:
 				tp.mutex.Lock()
 				if tp.activeCount < tp.maxWorkers {
 					tp.activeCount++
-					tp.mutex.Unlock()
 
 					tp.logger.Info(fmt.Sprintf("Creating new worker as %d is less than max workers %d", tp.activeCount, tp.maxWorkers))
+					tp.mutex.Unlock()
 
-					worker := NewWorker(tp.activeCount, tp.workerPool, tp, WORKER_IDLE_TIME)
+					worker := NewWorker(tp.workerPool, tp, WORKER_IDLE_TIME)
 					worker.Start(tp.wg)
 					worker.taskQueue <- task
 				} else {
@@ -143,6 +151,7 @@ func (tp *ThreadPool) dispatch() {
 				}
 			}
 		case <-tp.ctx.Done():
+			tp.logger.Info("Context resolved, stopping threadpool")
 			return
 		}
 	}
@@ -156,6 +165,8 @@ func (tp *ThreadPool) RemoveWorker() {
 }
 
 func (tp *ThreadPool) Add(task Task) {
+	assert.NotNil(task, "Task can not be nil when added to the thread pool")
+
 	tp.wg.Add(1)
 	tp.taskQueue <- task
 }
