@@ -22,7 +22,7 @@ type Task interface {
 }
 
 type Worker struct {
-	id         uuid
+	id         uuid.UUID
 	taskQueue  chan Task
 	workerPool chan *Worker
 	threadPool *ThreadPool
@@ -38,7 +38,7 @@ func NewWorker(wp chan *Worker, tp *ThreadPool, idleTime time.Duration) *Worker 
 
 	id := uuid.New()
 	ctx, cancel := context.WithCancel(tp.ctx)
-	logger := slog.Default().With("area", fmt.Sprintf("Worker %w", id.String()))
+	logger := slog.Default().With("area", fmt.Sprintf("Worker %s", id.String()))
 	return &Worker{
 		id:         id,
 		taskQueue:  make(chan Task),
@@ -54,10 +54,10 @@ func NewWorker(wp chan *Worker, tp *ThreadPool, idleTime time.Duration) *Worker 
 func (w *Worker) Start(wg *sync.WaitGroup) {
 	assert.NotNil(wg, "WaitGroup should not be nil when starting a worker")
 
-	ctxDoneStr := fmt.Sprintf("Stopping worker %w as context has resolved", w.id.String())
+	ctxDoneStr := fmt.Sprintf("Stopping worker %s as context has resolved", w.id.String())
 	go func() {
 		defer func() {
-			w.logger.Info(fmt.Sprintf("Remove worker %w", w.id.String()))
+			w.logger.Info(fmt.Sprintf("Remove worker %s", w.id.String()))
 			w.threadPool.RemoveWorker()
 		}()
 
@@ -69,7 +69,7 @@ func (w *Worker) Start(wg *sync.WaitGroup) {
 					task.Run()
 					wg.Done()
 				case <-time.After(w.idleTime):
-					w.logger.Info(fmt.Sprintf("Stopping worker %w as idle for %d", w.id.String(), w.idleTime))
+					w.logger.Info(fmt.Sprintf("Stopping worker %s as idle for %d", w.id.String(), w.idleTime))
 					return
 				case <-w.ctx.Done():
 					w.logger.Info(ctxDoneStr)
@@ -130,7 +130,7 @@ func (tp *ThreadPool) dispatch() {
 		case task := <-tp.taskQueue:
 			select {
 			case worker := <-tp.workerPool:
-				tp.logger.Info(fmt.Sprintf("Adding task to %w", worker.id.String()))
+				tp.logger.Info(fmt.Sprintf("Adding task to %s", worker.id.String()))
 				worker.taskQueue <- task
 			default:
 				tp.mutex.Lock()
