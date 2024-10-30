@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	MIN_WORKERS      = 1
-	MAX_WORKERS      = 64
-	WORKER_IDLE_TIME = 5 * time.Second
+	MIN_WORKERS   = 1
+	MAX_WORKERS   = 64
+	MIN_IDLE_TIME = 0
 )
 
 type Task interface {
@@ -22,19 +22,21 @@ type Task interface {
 	Run()
 }
 
-type Worker struct {
+type worker struct {
 	id             uuid.UUID
 	threadPool     *ThreadPool
 	lastActiveTime time.Time
 	logger         *slog.Logger
 }
 
-func NewWorker(tp *ThreadPool) *Worker {
+func NewWorker(tp *ThreadPool) *worker {
 	assert.NotNil(tp, "ThreadPool should not be nil when creating a worker")
 
 	id := uuid.New()
 	logger := slog.Default().With("area", fmt.Sprintf("Worker %s", id.String()))
-	return &Worker{
+
+	logger.Info("Creating new worker")
+	return &worker{
 		id:             id,
 		threadPool:     tp,
 		lastActiveTime: time.Now(),
@@ -42,7 +44,7 @@ func NewWorker(tp *ThreadPool) *Worker {
 	}
 }
 
-func (w *Worker) start(ctx context.Context, wg *sync.WaitGroup) {
+func (w *worker) start(ctx context.Context, wg *sync.WaitGroup) {
 	assert.NotNil(wg, "WaitGroup should not be nil when starting a worker")
 
 	for {
@@ -58,10 +60,14 @@ func (w *Worker) start(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
+func (w *worker) stop() {
+	w.logger.Info("Stopping worker")
+}
+
 type ThreadPool struct {
 	wg          *sync.WaitGroup
 	taskQueue   chan Task
-	workerPool  []*Worker
+	workerPool  []*worker
 	minWorkers  int
 	maxWorkers  int
 	idleTimeout time.Duration
@@ -75,6 +81,7 @@ func NewThreadPool(minWorkers int, maxWorkers int, idleTimeout time.Duration) *T
 	assert.Assert(minWorkers < maxWorkers, fmt.Sprintf("minWorkers of %d must be less than maxWorkers of %d", minWorkers, maxWorkers))
 	assert.Assert(maxWorkers > MIN_WORKERS, fmt.Sprintf("you should never have a thread pool with %d or less workers", MIN_WORKERS))
 	assert.Assert(maxWorkers <= MAX_WORKERS, fmt.Sprintf("thread pool max workers should never exceed %d", MAX_WORKERS))
+	assert.Assert(idleTimeout > MIN_IDLE_TIME, fmt.Sprintf("Threadpool timeout must be greated than %d seconds", MIN_IDLE_TIME))
 
 	logger := slog.Default().With("area", "ThreadPool")
 	logger.Info(fmt.Sprintf("Creating new ThreadPool with %d max workers", maxWorkers))
@@ -84,7 +91,7 @@ func NewThreadPool(minWorkers int, maxWorkers int, idleTimeout time.Duration) *T
 	return &ThreadPool{
 		wg:          &sync.WaitGroup{},
 		taskQueue:   make(chan Task),
-		workerPool:  make([]*Worker, 0, maxWorkers),
+		workerPool:  make([]*worker, 0, maxWorkers),
 		minWorkers:  minWorkers,
 		maxWorkers:  maxWorkers,
 		idleTimeout: idleTimeout,
@@ -157,10 +164,10 @@ func (tp *ThreadPool) cleanupIdleWorkers() {
 	tp.mutex.Lock()
 	defer tp.mutex.Unlock()
 
-	activeWorkers := make([]*Worker, 0, len(tp.workerPool))
+	activeWorkers := make([]*worker, 0, len(tp.workerPool))
 	for _, w := range tp.workerPool {
 		if time.Since(w.lastActiveTime) > tp.idleTimeout && len(tp.workerPool) > tp.minWorkers {
-			continue
+			w.stop()
 		} else {
 			activeWorkers = append(activeWorkers, w)
 		}
@@ -175,5 +182,11 @@ func (tp *ThreadPool) Wait() {
 
 func (tp *ThreadPool) Stop() {
 	tp.cancel()
+
+	tp.mutex.Lock()
+	for _, w := range tp.workerPool {
+		w.stop()
+	}
+
 	close(tp.taskQueue)
 }

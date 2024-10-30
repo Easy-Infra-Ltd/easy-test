@@ -38,6 +38,7 @@ type ThreadPoolTest struct {
 	maxWorkers int
 	tasks      int
 	attempts   int
+	idleTime   time.Duration
 	pause      time.Duration
 }
 
@@ -48,6 +49,7 @@ func TestThreadPool(t *testing.T) {
 			maxWorkers: 5,
 			tasks:      10,
 			attempts:   1,
+			idleTime:   5 * time.Second,
 			pause:      0,
 		},
 		{
@@ -55,6 +57,7 @@ func TestThreadPool(t *testing.T) {
 			maxWorkers: 5,
 			tasks:      3,
 			attempts:   1,
+			idleTime:   5 * time.Second,
 			pause:      0,
 		},
 		{
@@ -62,6 +65,7 @@ func TestThreadPool(t *testing.T) {
 			maxWorkers: 5,
 			tasks:      5,
 			attempts:   1,
+			idleTime:   5 * time.Second,
 			pause:      0,
 		},
 		{
@@ -69,6 +73,15 @@ func TestThreadPool(t *testing.T) {
 			maxWorkers: 5,
 			tasks:      5,
 			attempts:   5,
+			idleTime:   5 * time.Second,
+			pause:      3 * time.Second,
+		},
+		{
+			name:       "Equal tasks and workers with 5 attempts and idle time is equal to pause",
+			maxWorkers: 5,
+			tasks:      5,
+			attempts:   5,
+			idleTime:   5 * time.Second,
 			pause:      3 * time.Second,
 		},
 	}
@@ -76,7 +89,7 @@ func TestThreadPool(t *testing.T) {
 	t.Parallel()
 	for _, v := range tests {
 		t.Run(v.name, func(t *testing.T) {
-			tp := threadpool.NewThreadPool(1, v.maxWorkers, 5*time.Second)
+			tp := threadpool.NewThreadPool(1, v.maxWorkers, v.idleTime)
 
 			tp.Run()
 
@@ -84,7 +97,10 @@ func TestThreadPool(t *testing.T) {
 				for i := 0; i < v.tasks; i++ {
 					task := NewTeskTask(i, v.name)
 					t.Logf("Creating tasks %d", i)
-					tp.Add(task)
+					err := tp.Add(task)
+					if err != nil {
+						t.Errorf("ThreadPool has been shutdown before task has been added")
+					}
 				}
 
 				time.Sleep(v.pause)
