@@ -45,10 +45,14 @@ func (s *Simulation) Start() []*api.Client {
 	tp := threadpool.NewThreadPool(1, 10, 5*time.Second)
 	tp.Run()
 
-	for _, v := range s.target.clients {
-		tp.Add(NewSimulationTask(s.name+" "+s.target.id.String(), func() {
-			v.Post()
-		}))
+	for i := 0; i < s.attempts; i++ {
+		for _, v := range s.target.clients {
+			tp.Add(NewSimulationTask(s.name+" "+s.target.id.String(), func() {
+				v.Post()
+			}))
+		}
+
+		time.Sleep(s.cadence)
 	}
 
 	return s.target.clients
