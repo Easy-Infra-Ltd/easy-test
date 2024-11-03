@@ -42,11 +42,14 @@ func NewSimulation(name string, target *SimulationTarget, attempts int, cadence 
 }
 
 func (s *Simulation) Start() []*api.Client {
+	s.logger.Info("Starting Simulation")
 	tp := threadpool.NewThreadPool(1, 10, 5*time.Second)
 	tp.Run()
 
+	s.logger.Info("ThreadPool Initialised, executing attempts")
 	for i := 0; i < s.attempts; i++ {
 		for _, v := range s.target.clients {
+			s.logger.Info("Adding new simulation task to ThreadPool")
 			tp.Add(NewSimulationTask(s.name+" "+s.target.id.String(), func() {
 				v.Post()
 			}))
