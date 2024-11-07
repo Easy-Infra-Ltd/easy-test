@@ -13,12 +13,20 @@ type ClientParams struct {
 	body        io.Reader
 }
 
-type Client struct {
-	logger *slog.Logger
-	config ClientParams
+func NewClientParams(url string, contentType string, body io.Reader) *ClientParams {
+	return &ClientParams{
+		url:         url,
+		contentType: contentType,
+		body:        body,
+	}
 }
 
-func NewClient(config ClientParams) *Client {
+type Client struct {
+	logger *slog.Logger
+	config *ClientParams
+}
+
+func NewClient(config *ClientParams) *Client {
 	logger := slog.Default().With("area", "HTTPClient")
 	return &Client{
 		logger: logger,

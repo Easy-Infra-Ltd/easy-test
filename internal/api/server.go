@@ -28,6 +28,6 @@ func (s *Server) Start() error {
 	return http.ListenAndServe(s.addr, s.servemux)
 }
 
-func (s *Server) AddRoute(pattern string, handler http.Handler) {
+func (s *Server) AddRoute(pattern string, handler http.HandlerFunc) {
 	s.servemux.Handle(pattern, handler)
 }

@@ -16,6 +16,15 @@ type SimulationTarget struct {
 	clients []*api.Client
 }
 
+func NewSimulationTarget(clients []*api.Client) *SimulationTarget {
+	assert.Assert(len(clients) > 0, "Simulation Target can not have 0 or less clients")
+
+	return &SimulationTarget{
+		id:      uuid.New(),
+		clients: clients,
+	}
+}
+
 type Simulation struct {
 	name     string
 	target   *SimulationTarget
@@ -57,6 +66,8 @@ func (s *Simulation) Start() []*api.Client {
 
 		time.Sleep(s.cadence)
 	}
+
+	tp.Wait()
 
 	return s.target.clients
 }

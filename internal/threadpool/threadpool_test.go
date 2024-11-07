@@ -3,9 +3,11 @@ package threadpool_test
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/Easy-Infra-Ltd/easy-test/internal/logger"
 	"github.com/Easy-Infra-Ltd/easy-test/internal/threadpool"
 )
 
@@ -43,6 +45,10 @@ type ThreadPoolTest struct {
 }
 
 func TestThreadPool(t *testing.T) {
+	logger := logger.CreateLoggerFromEnv(os.Stdout)
+	logger = logger.With("area", "ThreadPool Test").With("process", "test")
+	slog.SetDefault(logger)
+
 	tests := []ThreadPoolTest{
 		{
 			name:       "More tasks than workers",

@@ -64,7 +64,11 @@ var allColours = []int{
 }
 
 func getProcessColour(process string) int {
-	return 0
+	switch process {
+	case "test":
+		return lightRed
+	}
+	return lightMagenta
 }
 
 var areaColours = map[string]int{}
