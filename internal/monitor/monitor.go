@@ -10,17 +10,13 @@ import (
 	"github.com/Easy-Infra-Ltd/easy-test/internal/threadpool"
 )
 
-type MonitorTarget struct {
-	clients []*api.Client
-}
-
 type Monitor struct {
-	name   string
-	target *MonitorTarget
-	freq   time.Duration
-	ctx    context.Context
-	cancel context.CancelFunc
-	logger *slog.Logger
+	name    string
+	clients []*api.Client
+	freq    time.Duration
+	ctx     context.Context
+	cancel  context.CancelFunc
+	logger  *slog.Logger
 }
 
 func NewMonitor(name string, freq time.Duration) *Monitor {
@@ -44,7 +40,7 @@ func (m *Monitor) Start() {
 	for {
 		select {
 		case <-t.C:
-			task := NewMonitorTask(m.name)
+			task := NewMonitorTask(m.name, m.clients)
 			tp.Add(task)
 		case <-m.ctx.Done():
 			t.Stop()
