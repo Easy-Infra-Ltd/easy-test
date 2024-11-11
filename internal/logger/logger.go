@@ -75,14 +75,14 @@ var areaColours = map[string]int{}
 var areaColoursIdx = 0
 
 func getAreaColour(area string) int {
-	color, ok := areaColours[area]
+	colour, ok := areaColours[area]
 	if !ok {
-		coulor := allColours[areaColoursIdx%len(allColours)]
-		areaColours[area] = coulor
+		colour = allColours[areaColoursIdx%len(allColours)]
+		areaColours[area] = colour
 		areaColoursIdx++
 	}
 
-	return color
+	return colour
 }
 
 func isHandledKey(key string) bool {
