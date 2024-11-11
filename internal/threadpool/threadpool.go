@@ -78,6 +78,7 @@ type ThreadPool struct {
 }
 
 func NewThreadPool(minWorkers int, maxWorkers int, idleTimeout time.Duration) *ThreadPool {
+	assert.Assert(minWorkers >= 0, "minWorkers can never be less than 0")
 	assert.Assert(minWorkers < maxWorkers, fmt.Sprintf("minWorkers of %d must be less than maxWorkers of %d", minWorkers, maxWorkers))
 	assert.Assert(maxWorkers > MIN_WORKERS, fmt.Sprintf("you should never have a thread pool with %d or less workers", MIN_WORKERS))
 	assert.Assert(maxWorkers <= MAX_WORKERS, fmt.Sprintf("thread pool max workers should never exceed %d", MAX_WORKERS))

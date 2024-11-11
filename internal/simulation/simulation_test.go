@@ -26,7 +26,7 @@ func ServerHandlerTesting(http.ResponseWriter, *http.Request) {
 
 func TestSimulation(t *testing.T) {
 	logger := logger.CreateLoggerFromEnv(nil)
-	logger = logger.With("area", "ThreadPool Test").With("process", "test")
+	logger = logger.With("area", "Simulation Test").With("process", "test")
 	slog.SetDefault(logger)
 
 	server := api.NewServer("Test Server", ":3333")
