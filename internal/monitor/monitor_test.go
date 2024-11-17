@@ -19,8 +19,23 @@ type MonitorTestParams struct {
 	retries  int
 }
 
-func handleGetTest(res http.ResponseWriter, req *http.Request) {
+type TestResponse struct {
+	id   string
+	name string
+}
 
+func handleGetTest(res http.ResponseWriter, req *http.Request) {
+	slog.Default().With("area", "GET TEST").Info("handleGetTest called")
+
+	res.Header().Set("Content-Type", "applications/json")
+	res.WriteHeader(http.StatusOK)
+
+	response := &TestResponse{
+		id:   "test",
+		name: "A Test Response",
+	}
+	writer := json.NewEncoder(res)
+	writer.Encode(response)
 }
 
 func TestMonitor(t *testing.T) {
@@ -47,9 +62,13 @@ func TestMonitor(t *testing.T) {
 		t.Run(v.name, func(t *testing.T) {
 			targets := make([]*monitor.MonitorTarget, 0, v.cliCount)
 			for i := 0; i < v.cliCount; i++ {
-				cli := api.NewClient(api.NewClientParams("https://localhost:3333/test", "application/json", nil))
+				cli := api.NewClient(api.NewClientParams("http://localhost:3333/test", "application/json", nil))
 
-				var expectedResponse map[string]*json.RawMessage
+				expected := &TestResponse{
+					id:   "test",
+					name: "A Test Response",
+				}
+				expectedResponse, _ := json.Marshal(expected)
 				targets = append(targets, monitor.NewMonitorTarget(cli, expectedResponse))
 			}
 

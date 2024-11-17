@@ -3,8 +3,9 @@ package monitor
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
-	"maps"
+	"reflect"
 	"time"
 
 	"github.com/Easy-Infra-Ltd/easy-test/internal/api"
@@ -14,10 +15,10 @@ import (
 
 type MonitorTarget struct {
 	client           *api.Client
-	expectedResponse map[string]*json.RawMessage
+	expectedResponse []byte
 }
 
-func NewMonitorTarget(client *api.Client, expectedResponse map[string]*json.RawMessage) *MonitorTarget {
+func NewMonitorTarget(client *api.Client, expectedResponse []byte) *MonitorTarget {
 	assert.NotNil(client, "Client can not be nil when creating a MonitorTarget")
 
 	return &MonitorTarget{
@@ -61,6 +62,7 @@ func (m *Monitor) Start() {
 	tp := threadpool.NewThreadPool(1, 10, 5*time.Second)
 	tp.Run()
 
+	m.logger.Info("Adding Monitor Tasks to thread pool")
 	for _, v := range m.targets {
 		task := NewMonitorTask(m.ctx, m.name, v, m.freq, m.retries)
 		tp.Add(task)
@@ -88,7 +90,7 @@ func NewMonitorTask(ctx context.Context, name string, target *MonitorTarget, fre
 		name:    name,
 		target:  target,
 		freq:    freq,
-		retries: 0,
+		retries: retries,
 		ctx:     ctx,
 		logger:  logger,
 	}
@@ -99,23 +101,30 @@ func (m *MonitorTask) GetName() string {
 }
 
 func (m *MonitorTask) Run() {
-	assert.NotNil(m.target, "Target should not be nil when trying to run Monitor Task")
-	assert.NotNil(m.target.client, "Client should not be nil on the target when trying to run the Monitor Task")
-
 	for i := 0; i < m.retries; i++ {
+		assert.NotNil(m.target, "Target should not be nil when trying to run Monitor Task")
+		assert.NotNil(m.target.client, "Client should not be nil on the target when trying to run the Monitor Task")
+
 		select {
 		case <-m.ctx.Done():
 			m.logger.Info("Monitor finished, exiting")
 			return
 		default:
 			resp, _ := m.target.client.Get()
-			defer resp.Body.Close()
+			m.logger.Info(fmt.Sprintf("Response %+v", resp))
+			m.logger.Info(fmt.Sprintf("Response Body %+v", resp.Body))
 
-			var v map[string]*json.RawMessage
-			jsonErr := json.NewDecoder(resp.Body).Decode(v)
+			var v map[string]any
+			jsonErr := json.NewDecoder(resp.Body).Decode(&v)
 			assert.NoError(jsonErr, "Can not error when decoding json from monitored GET request")
 
-			if maps.Equal(m.target.expectedResponse, v) {
+			resp.Body.Close()
+			var expectedResponse map[string]any
+			mErr := json.Unmarshal(m.target.expectedResponse, &expectedResponse)
+			assert.NoError(mErr, "Can not error when unmarshalling expectedResponse")
+
+			if reflect.DeepEqual(expectedResponse, v) {
+				m.logger.Info("Successfully found response")
 				return
 			}
 

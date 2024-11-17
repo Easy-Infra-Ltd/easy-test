@@ -73,8 +73,12 @@ func getProcessColour(process string) int {
 
 var areaColours = map[string]int{}
 var areaColoursIdx = 0
+var acMutex sync.Mutex
 
 func getAreaColour(area string) int {
+	acMutex.Lock()
+	defer acMutex.Unlock()
+
 	colour, ok := areaColours[area]
 	if !ok {
 		colour = allColours[areaColoursIdx%len(allColours)]
