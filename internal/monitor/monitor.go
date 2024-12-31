@@ -13,16 +13,45 @@ import (
 	"github.com/Easy-Infra-Ltd/easy-test/internal/threadpool"
 )
 
-type MonitorTarget struct {
-	client           *api.Client
-	expectedResponse []byte
+type MonitorTargetConfig struct {
+	Client           *api.ClientConfig `json:"client"`
+	Freq             time.Duration     `json:"freq"`
+	Retries          int               `json:"retries"`
+	ExpectedResponse map[string]any    `json:"expectedResponse"`
 }
 
-func NewMonitorTarget(client *api.Client, expectedResponse []byte) *MonitorTarget {
+type MonitorConfig struct {
+	Name           string                 `json:"name"`
+	MonitorTargets []*MonitorTargetConfig `json:"monitorTargets"`
+}
+
+func CreateMonitorTargetsFromConfig(monitorTargetConfig []*MonitorTargetConfig) []*MonitorTarget {
+	monitorTargets := make([]*MonitorTarget, 0, len(monitorTargetConfig))
+	for _, v := range monitorTargetConfig {
+		client := api.NewClient(api.NewClientParams(v.Client.Url, v.Client.ContentType, nil))
+		monitorTarget := NewMonitorTarget(client, v.ExpectedResponse, v.Freq*time.Second, v.Retries)
+
+		monitorTargets = append(monitorTargets, monitorTarget)
+	}
+
+	return monitorTargets
+}
+
+type MonitorTarget struct {
+	client           *api.Client
+	freq             time.Duration
+	retries          int
+	expectedResponse map[string]any
+}
+
+func NewMonitorTarget(client *api.Client, expectedResponse map[string]any, freq time.Duration, retries int) *MonitorTarget {
 	assert.NotNil(client, "Client can not be nil when creating a MonitorTarget")
+	assert.Assert(freq > 0, "Frequency can not be 0")
 
 	return &MonitorTarget{
 		client:           client,
+		freq:             freq,
+		retries:          retries,
 		expectedResponse: expectedResponse,
 	}
 }
@@ -30,16 +59,13 @@ func NewMonitorTarget(client *api.Client, expectedResponse []byte) *MonitorTarge
 type Monitor struct {
 	name    string
 	targets []*MonitorTarget
-	freq    time.Duration
-	retries int
 	ctx     context.Context
 	cancel  context.CancelFunc
 	logger  *slog.Logger
 }
 
-func NewMonitor(name string, targets []*MonitorTarget, freq time.Duration, retries int) *Monitor {
+func NewMonitor(name string, targets []*MonitorTarget) *Monitor {
 	assert.Assert(len(targets) > 0, "Can not have 0 clients to monitor")
-	assert.Assert(freq > 0, "Frequency can not be 0")
 
 	logger := slog.Default().With("area", "Monitor "+name)
 
@@ -47,8 +73,6 @@ func NewMonitor(name string, targets []*MonitorTarget, freq time.Duration, retri
 	return &Monitor{
 		name:    name,
 		targets: targets,
-		freq:    freq,
-		retries: retries,
 		ctx:     ctx,
 		cancel:  cancel,
 		logger:  logger,
@@ -57,14 +81,15 @@ func NewMonitor(name string, targets []*MonitorTarget, freq time.Duration, retri
 
 func (m *Monitor) Start() {
 	assert.Assert(len(m.targets) > 0, "When calling Start on Monitor must have more than 0 clients to monitor")
-	assert.Assert(m.freq > 0, "When calling Start on Monitor freq must be greater than 0")
 
 	tp := threadpool.NewThreadPool(1, 10, 5*time.Second)
 	tp.Run()
 
 	m.logger.Info("Adding Monitor Tasks to thread pool")
 	for _, v := range m.targets {
-		task := NewMonitorTask(m.ctx, m.name, v, m.freq, m.retries)
+		assert.Assert(v.freq > 0, "When calling Start on Monitor freq must be greater than 0")
+
+		task := NewMonitorTask(m.ctx, m.name, v, v.freq, v.retries)
 		tp.Add(task)
 	}
 
@@ -96,7 +121,7 @@ func NewMonitorTask(ctx context.Context, name string, target *MonitorTarget, fre
 	}
 }
 
-func (m *MonitorTask) GetName() string {
+func (m MonitorTask) GetName() string {
 	return m.name
 }
 
@@ -112,20 +137,20 @@ func (m *MonitorTask) Run() {
 		default:
 			resp, _ := m.target.client.Get()
 			m.logger.Info(fmt.Sprintf("Response %+v", resp))
-			m.logger.Info(fmt.Sprintf("Response Body %+v", resp.Body))
 
-			var v map[string]any
-			jsonErr := json.NewDecoder(resp.Body).Decode(&v)
-			assert.NoError(jsonErr, "Can not error when decoding json from monitored GET request")
+			if resp != nil && resp.Body != nil {
+				m.logger.Info(fmt.Sprintf("Response Body %+v", resp.Body))
 
-			resp.Body.Close()
-			var expectedResponse map[string]any
-			mErr := json.Unmarshal(m.target.expectedResponse, &expectedResponse)
-			assert.NoError(mErr, "Can not error when unmarshalling expectedResponse")
+				var v map[string]any
+				jsonErr := json.NewDecoder(resp.Body).Decode(&v)
+				assert.NoError(jsonErr, "Can not error when decoding json from monitored GET request")
 
-			if reflect.DeepEqual(expectedResponse, v) {
-				m.logger.Info("Successfully found response")
-				return
+				resp.Body.Close()
+
+				if reflect.DeepEqual(m.target.expectedResponse, v) {
+					m.logger.Info("Successfully found response")
+					return
+				}
 			}
 
 			time.Sleep(m.freq)

@@ -63,12 +63,36 @@ var allColours = []int{
 	97,
 }
 
+var colourMap = map[string]int{
+	"black":        black,
+	"red":          red,
+	"green":        green,
+	"yellow":       yellow,
+	"blue":         blue,
+	"magenta":      magenta,
+	"cyan":         cyan,
+	"lightGray":    lightGray,
+	"darkGray":     darkGray,
+	"lightRed":     lightRed,
+	"lightGreen":   lightGreen,
+	"lightYellow":  lightYellow,
+	"lightBlue":    lightBlue,
+	"lightMagenta": lightMagenta,
+	"lightCyan":    lightCyan,
+	"white":        white,
+}
+
+var processColour int = lightGray
+
+func setProcessColour(colour string) {
+	c, ok := colourMap[colour]
+	assert.Assert(ok, "Process colour must exist in colour map")
+
+	processColour = c
+}
+
 func getProcessColour(process string) int {
-	switch process {
-	case "test":
-		return lightRed
-	}
-	return lightMagenta
+	return processColour
 }
 
 var areaColours = map[string]int{}
@@ -165,6 +189,7 @@ func (h *Handler) computeAttrs(ctx context.Context, r slog.Record) (map[string]a
 }
 
 func PrettyLine(data map[string]any, colourise func(code int, value string) string) (string, error) {
+	// TODO: Make support OTEL
 	process, ok := data[ProcessKey]
 	assert.Assert(ok, "process must be defined when calling PrettyLine")
 	area, ok := data[AreaKey]
@@ -399,10 +424,12 @@ func CreateLoggerSink() *os.File {
 	return f
 }
 
-func CreateLoggerFromEnv(out *os.File) *slog.Logger {
+func CreateLoggerFromEnv(out *os.File, colour string) *slog.Logger {
 	if out == nil {
 		out = CreateLoggerSink()
 	}
+
+	setProcessColour(colour)
 
 	if os.Getenv("DEBUG_TYPE") == "pretty" {
 		return SetProgramLevelPrettyLogger(NewParams(out))

@@ -25,7 +25,7 @@ func ServerHandlerTesting(http.ResponseWriter, *http.Request) {
 }
 
 func TestSimulation(t *testing.T) {
-	logger := logger.CreateLoggerFromEnv(nil)
+	logger := logger.CreateLoggerFromEnv(nil, "lightRed")
 	logger = logger.With("area", "Simulation Test").With("process", "test")
 	slog.SetDefault(logger)
 

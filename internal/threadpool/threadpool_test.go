@@ -3,7 +3,6 @@ package threadpool_test
 import (
 	"fmt"
 	"log/slog"
-	"os"
 	"testing"
 	"time"
 
@@ -45,7 +44,7 @@ type ThreadPoolTest struct {
 }
 
 func TestThreadPool(t *testing.T) {
-	logger := logger.CreateLoggerFromEnv(os.Stdout)
+	logger := logger.CreateLoggerFromEnv(nil, "lightRed")
 	logger = logger.With("area", "ThreadPool Test").With("process", "test")
 	slog.SetDefault(logger)
 

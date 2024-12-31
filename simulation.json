@@ -1,0 +1,33 @@
+{
+    "name": "Simple Once",
+    "target": {
+        "count": 1,
+        "client": {
+            "url": "https://localhost:3333/test",
+            "contentType": "application/json",
+            "body": {
+                "some": "data",
+                "more": "info"
+            }
+        },
+        "monitor": {
+            "name": "source",
+            "monitorTargets": [
+                {
+                    "client": {
+                        "url": "https://localhost:3333/test",
+                        "contentType": "application/json"
+                    },
+                    "retries": 10,
+                    "freq": 5,
+                    "expectedResponse": {
+                        "success": "true",
+                        "id": ""
+                    }
+                }
+            ]
+        }
+    },
+    "cadence": 5,
+    "attempts": 1
+}

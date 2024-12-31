@@ -5,7 +5,14 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+
+	"github.com/Easy-Infra-Ltd/easy-test/internal/assert"
 )
+
+type ClientConfig struct {
+	Url         string `json:"url"`
+	ContentType string `json:"contentType"`
+}
 
 type ClientParams struct {
 	url         string
@@ -14,6 +21,9 @@ type ClientParams struct {
 }
 
 func NewClientParams(url string, contentType string, body io.Reader) *ClientParams {
+	assert.NotNil(url, "Client params url can not be nil")
+	assert.NotNil(contentType, "Client params contentType cannot be nil")
+
 	return &ClientParams{
 		url:         url,
 		contentType: contentType,
