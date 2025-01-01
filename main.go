@@ -16,11 +16,16 @@ func main() {
 	// TODO: Add ability to dry run simulation
 	var path string
 	flag.StringVar(&path, "path", "simulation.json", "Path to simulation configuration file")
-	dry := flag.Bool("dry", false, "Allow you to run the simulation without making any requests externally to ensure you have it setup correctly")
+	var dry bool
+	flag.BoolVar(&dry, "dry", false, "Allow you to run the simulation without making any requests externally to ensure you have it setup correctly")
 	flag.Parse()
 
 	logger := logger.CreateLoggerFromEnv(nil, "lightGreen")
-	logger = logger.With("process", "Simulation").With("area", "Simulation CLI")
+	processName := "Simulation"
+	if dry {
+		processName = "[DRY]" + processName
+	}
+	logger = logger.With("process", processName).With("area", "CLI")
 	slog.SetDefault(logger)
 
 	file, err := os.Open(path)
@@ -34,6 +39,6 @@ func main() {
 
 	logger.Info(fmt.Sprintf("config: %+v\n", simConfig))
 
-	sim := simulation.NewSimulationFromConfig(&simConfig, *dry)
+	sim := simulation.NewSimulationFromConfig(&simConfig, dry)
 	sim.Start()
 }

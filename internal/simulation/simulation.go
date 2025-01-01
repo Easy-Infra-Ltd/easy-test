@@ -47,6 +47,7 @@ type SimulationConfig struct {
 }
 
 func NewSimulationFromConfig(simConfig *SimulationConfig, dry bool) *Simulation {
+	// TODO: Allow for simulation to be created from config without Monitors
 	monitorTargets := monitor.CreateMonitorTargetsFromConfig(simConfig.Target.Monitor.MonitorTargets)
 	monitorConfig := &SimulationMonitorConfig{
 		name:           simConfig.Target.Monitor.Name,
@@ -120,6 +121,7 @@ func (s *Simulation) Start() []*api.Client {
 
 				var id string
 
+				// TODO: Extract the ID
 				return id
 			}, s.target.monitor))
 		}
