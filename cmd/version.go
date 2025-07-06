@@ -40,4 +40,3 @@ func showVersion(cmd *cobra.Command, args []string) {
 		fmt.Printf("easy-test %s\n", Version)
 	}
 }
-

@@ -50,12 +50,12 @@ func TestParseConfigFile(t *testing.T) {
 					t.Fatalf("Failed to create temp file: %v", err)
 				}
 				defer os.Remove(file.Name())
-				
+
 				if _, err := file.WriteString(tt.fileContent); err != nil {
 					t.Fatalf("Failed to write to temp file: %v", err)
 				}
 				file.Close()
-				
+
 				tt.filePath = file.Name()
 			}
 
@@ -177,7 +177,7 @@ func TestValidateConfigData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := ValidateConfigData(tt.config)
-			
+
 			if len(errors) != tt.expectedErrors {
 				t.Errorf("ValidateConfigData() returned %d errors, want %d", len(errors), tt.expectedErrors)
 			}
@@ -285,7 +285,7 @@ func TestConfigValidationError(t *testing.T) {
 				Field:   tt.field,
 				Message: tt.message,
 			}
-			
+
 			result := err.Error()
 			if result != tt.expected {
 				t.Errorf("ConfigValidationError.Error() = %v, want %v", result, tt.expected)
@@ -296,7 +296,7 @@ func TestConfigValidationError(t *testing.T) {
 
 func BenchmarkParseConfigReader(b *testing.B) {
 	reader := strings.NewReader(`{}`)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		reader.Seek(0, 0)
@@ -307,7 +307,7 @@ func BenchmarkParseConfigReader(b *testing.B) {
 func BenchmarkResolveConfigPath(b *testing.B) {
 	args := []string{"test.json"}
 	flagPath := "flag.json"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = ResolveConfigPath(args, flagPath)

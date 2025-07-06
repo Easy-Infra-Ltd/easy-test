@@ -121,7 +121,7 @@ func TestPrepareSimulationOptions(t *testing.T) {
 				if err != nil {
 					t.Errorf("PrepareSimulationOptions() unexpected error: %v", err)
 				}
-				
+
 				if result.Config != tt.config {
 					t.Errorf("PrepareSimulationOptions().Config = %v, want %v", result.Config, tt.config)
 				}
@@ -280,16 +280,16 @@ func TestSimulationEdgeCases(t *testing.T) {
 }
 
 func containsString(haystack, needle string) bool {
-	return len(needle) == 0 || len(haystack) >= len(needle) && 
-		   (haystack == needle || 
-		    haystack[:len(needle)] == needle || 
-		    haystack[len(haystack)-len(needle):] == needle ||
-		    strings.Contains(haystack, needle))
+	return len(needle) == 0 || len(haystack) >= len(needle) &&
+		(haystack == needle ||
+			haystack[:len(needle)] == needle ||
+			haystack[len(haystack)-len(needle):] == needle ||
+			strings.Contains(haystack, needle))
 }
 
 func BenchmarkPrepareSimulationOptions(b *testing.B) {
 	config := &simulation.SimulationConfig{}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = PrepareSimulationOptions(config, false, 10, 30*time.Second)
@@ -298,7 +298,7 @@ func BenchmarkPrepareSimulationOptions(b *testing.B) {
 
 func BenchmarkPrepareSimulationOptionsOnly(b *testing.B) {
 	config := &simulation.SimulationConfig{}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = PrepareSimulationOptions(config, true, 10, 30*time.Second)

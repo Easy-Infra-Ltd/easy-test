@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	cfgFile   string
-	verbose   bool
-	logLevel  string
-	noColor   bool
+	cfgFile  string
+	verbose  bool
+	logLevel string
+	noColor  bool
 )
 
 var rootCmd = &cobra.Command{
@@ -34,13 +34,13 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", 
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
 		"config file (default is $HOME/.easy-test.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, 
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false,
 		"verbose output")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", 
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info",
 		"log level (trace|debug|info|warn|error)")
-	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, 
+	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false,
 		"disable colored output")
 
 	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
