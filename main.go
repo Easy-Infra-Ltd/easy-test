@@ -14,6 +14,7 @@ import (
 
 func main() {
 	// TODO: Add ability to dry run simulation
+	// TODO: Update to use cobra
 	var path string
 	flag.StringVar(&path, "path", "simulation.json", "Path to simulation configuration file")
 	var dry bool
@@ -34,8 +35,9 @@ func main() {
 
 	var simConfig simulation.SimulationConfig
 	decoder := json.NewDecoder(file)
-	jErr := decoder.Decode(&simConfig)
-	assert.NoError(jErr, "Failed to unmarshal json when loading configuration file")
+	if err := decoder.Decode(&simConfig); err != nil {
+		assert.NoError(err, "Failed to unmarshal json when loading configuration file")
+	}
 
 	logger.Info(fmt.Sprintf("config: %+v\n", simConfig))
 
