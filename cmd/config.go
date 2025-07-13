@@ -39,11 +39,11 @@ func ParseConfigReader(reader io.Reader, strict bool) (*simulation.SimulationCon
 
 	var config simulation.SimulationConfig
 	decoder := json.NewDecoder(reader)
-	
+
 	if strict {
 		decoder.DisallowUnknownFields()
 	}
-	
+
 	if err := decoder.Decode(&config); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON configuration: %w", err)
 	}

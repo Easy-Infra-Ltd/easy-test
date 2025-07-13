@@ -64,7 +64,7 @@ func validateConfig(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("✓ Configuration file %q is valid\n", configPath)
-	
+
 	if GetVerbose() {
 		log.Info("Configuration validated successfully",
 			"file", configPath,
@@ -75,12 +75,9 @@ func validateConfig(cmd *cobra.Command, args []string) error {
 }
 
 func validateSimulationConfig(config *simulation.SimulationConfig) error {
-	
 	if config == nil {
 		return fmt.Errorf("configuration cannot be nil")
 	}
-
-	
 
 	return nil
 }

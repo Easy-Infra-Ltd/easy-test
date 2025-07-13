@@ -20,7 +20,7 @@ func TestGetVerbose(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "VerboseFalse", 
+			name:     "VerboseFalse",
 			setValue: false,
 			expected: false,
 		},
@@ -29,7 +29,7 @@ func TestGetVerbose(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			verbose = tt.setValue
-			
+
 			result := GetVerbose()
 			if result != tt.expected {
 				t.Errorf("GetVerbose() = %v, want %v", result, tt.expected)
@@ -51,7 +51,7 @@ func TestGetLogLevel(t *testing.T) {
 		},
 		{
 			name:     "LogLevelDebug",
-			setValue: "debug", 
+			setValue: "debug",
 			expected: "debug",
 		},
 		{
@@ -84,7 +84,7 @@ func TestGetLogLevel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logLevel = tt.setValue
-			
+
 			result := GetLogLevel()
 			if result != tt.expected {
 				t.Errorf("GetLogLevel() = %v, want %v", result, tt.expected)
@@ -114,7 +114,7 @@ func TestGetNoColor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			noColor = tt.setValue
-			
+
 			result := GetNoColor()
 			if result != tt.expected {
 				t.Errorf("GetNoColor() = %v, want %v", result, tt.expected)
@@ -159,7 +159,7 @@ func TestGetConfigFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfgFile = tt.setValue
-			
+
 			result := GetConfigFile()
 			if result != tt.expected {
 				t.Errorf("GetConfigFile() = %v, want %v", result, tt.expected)
@@ -259,7 +259,7 @@ func TestValidateSimulationConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := validateSimulationConfig(tt.config)
-			
+
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("validateSimulationConfig() expected error but got none")
@@ -277,7 +277,7 @@ func TestValidateSimulationConfig(t *testing.T) {
 
 func BenchmarkGetVerbose(b *testing.B) {
 	verbose = true
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = GetVerbose()
@@ -286,7 +286,7 @@ func BenchmarkGetVerbose(b *testing.B) {
 
 func BenchmarkGetLogLevel(b *testing.B) {
 	logLevel = "debug"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = GetLogLevel()
@@ -295,7 +295,7 @@ func BenchmarkGetLogLevel(b *testing.B) {
 
 func BenchmarkParseLogLevel(b *testing.B) {
 	levels := []string{"trace", "debug", "info", "warn", "error", "invalid"}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		level := levels[i%len(levels)]
@@ -305,12 +305,11 @@ func BenchmarkParseLogLevel(b *testing.B) {
 
 func TestConcurrentAccess(t *testing.T) {
 	done := make(chan bool, 100)
-	
 	verbose = true
 	logLevel = "debug"
 	noColor = false
 	cfgFile = "/test/config.yaml"
-	
+
 	for i := 0; i < 100; i++ {
 		go func() {
 			_ = GetVerbose()
@@ -320,16 +319,21 @@ func TestConcurrentAccess(t *testing.T) {
 			done <- true
 		}()
 	}
-	
+
 	for i := 0; i < 100; i++ {
 		<-done
 	}
-	
+
+	// Wait for all goroutines to complete
+	for i := 0; i < 100; i++ {
+		<-done
+	}
+
 	if GetVerbose() != true {
 		t.Error("Concurrent access changed verbose value")
 	}
 	if GetLogLevel() != "debug" {
-		t.Error("Concurrent access changed logLevel value")  
+		t.Error("Concurrent access changed logLevel value")
 	}
 	if GetNoColor() != false {
 		t.Error("Concurrent access changed noColor value")

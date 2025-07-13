@@ -112,7 +112,7 @@ func TestCreateLoggerOptions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CreateLoggerOptions(tt.verbose, tt.noColor, tt.logLevel, tt.colorName)
-			
+
 			if result.Verbose != tt.expected.Verbose {
 				t.Errorf("CreateLoggerOptions().Verbose = %v, want %v", result.Verbose, tt.expected.Verbose)
 			}
@@ -180,7 +180,7 @@ func TestCreateLogger(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CreateLogger(tt.opts)
-			
+
 			if tt.wantNil && result != nil {
 				t.Errorf("CreateLogger() = %v, want nil", result)
 			}
@@ -193,52 +193,52 @@ func TestCreateLogger(t *testing.T) {
 
 func TestConfigureProcessLogger(t *testing.T) {
 	tests := []struct {
-		name        string
-		processName string
-		area        string
-		dryRun      bool
+		name            string
+		processName     string
+		area            string
+		dryRun          bool
 		expectDryPrefix bool
 	}{
 		{
 			name:            "NormalProcess",
 			processName:     "TestProcess",
-			area:           "TestArea",
-			dryRun:         false,
+			area:            "TestArea",
+			dryRun:          false,
 			expectDryPrefix: false,
 		},
 		{
 			name:            "DryRunProcess",
 			processName:     "TestProcess",
-			area:           "TestArea",
-			dryRun:         true,
+			area:            "TestArea",
+			dryRun:          true,
 			expectDryPrefix: true,
 		},
 		{
 			name:            "EmptyProcessName",
 			processName:     "",
-			area:           "TestArea",
-			dryRun:         false,
+			area:            "TestArea",
+			dryRun:          false,
 			expectDryPrefix: false,
 		},
 		{
 			name:            "EmptyArea",
 			processName:     "TestProcess",
-			area:           "",
-			dryRun:         false,
+			area:            "",
+			dryRun:          false,
 			expectDryPrefix: false,
 		},
 		{
 			name:            "SpecialCharactersInNames",
 			processName:     "Test@Process#123",
-			area:           "Test$Area%456",
-			dryRun:         false,
+			area:            "Test$Area%456",
+			dryRun:          false,
 			expectDryPrefix: false,
 		},
 		{
 			name:            "DryRunWithSpecialCharacters",
 			processName:     "Test Process",
-			area:           "Test Area",
-			dryRun:         true,
+			area:            "Test Area",
+			dryRun:          true,
 			expectDryPrefix: true,
 		},
 	}
@@ -246,22 +246,21 @@ func TestConfigureProcessLogger(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			baseLogger := slog.Default()
-			
+
 			result := ConfigureProcessLogger(baseLogger, tt.processName, tt.area, tt.dryRun)
-			
+
 			if result == nil {
 				t.Errorf("ConfigureProcessLogger() returned nil")
 			}
-			
 		})
 	}
 }
 
 func TestLoggerOptionsEdgeCases(t *testing.T) {
 	tests := []struct {
-		name      string
-		logLevel  string
-		expected  slog.Level
+		name     string
+		logLevel string
+		expected slog.Level
 	}{
 		{
 			name:     "CaseSensitiveLevel",
@@ -309,7 +308,7 @@ func BenchmarkCreateLoggerOptions(b *testing.B) {
 
 func BenchmarkConfigureProcessLogger(b *testing.B) {
 	baseLogger := slog.Default()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = ConfigureProcessLogger(baseLogger, "TestProcess", "TestArea", false)

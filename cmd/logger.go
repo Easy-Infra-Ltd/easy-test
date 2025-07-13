@@ -37,9 +37,9 @@ func ConfigureProcessLogger(baseLogger *slog.Logger, processName, area string, d
 	if dryRun {
 		processName = "[DRY]" + processName
 	}
-	
+
 	configuredLogger := baseLogger.With("process", processName).With("area", area)
 	slog.SetDefault(configuredLogger)
-	
+
 	return configuredLogger
 }
